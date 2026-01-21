@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceAssist Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .loader { border-top-color: #2563EB; animation: spinner 1s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+<div class="max-w-6xl mx-auto p-4 md:p-8">
+    
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">FinanceAssist</h1>
+                <p class="text-xs text-slate-400 font-medium uppercase">Otomatik Finans Yöneticisi</p>
+            </div>
+        </div>
+
+        <div class="flex gap-8 text-right">
+            <div class="cursor-pointer group" onclick="maasGuncelleModal()">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Gelir</p>
+                <div id="maasGosterge" class="text-xl font-bold text-slate-700">-- TL</div>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Kalan Bakiye</p>
+                <div id="kalanBakiye" class="text-3xl font-bold text-emerald-500">-- TL</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        
+        <div class="md:col-span-4 space-y-6">
+            
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 sticky top-6">
+                <h2 class="font-bold text-slate-700 mb-5 flex items-center gap-2">
+                    <i class="fas fa-plus-circle text-blue-500"></i> Yeni Ekle
+                </h2>
+                
+                <form id="ekleForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Kategori</label>
+                        <select id="kategori" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" onchange="altKategorileriGetir()">
+                            <option value="" disabled selected>Seçiniz...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Harcama Yeri</label>
+                        <select id="baslikSelect" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" onchange="manuelGirisKontrol()">
+                            <option value="" disabled selected>Önce kategori seçin</option>
+                        </select>
+                        <input type="text" id="baslikInput" class="w-full mt-2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm hidden focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Kira">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Tutar (TL)</label>
+                        <input type="number" id="tutar" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Ödeme Yöntemi</label>
+                        <select id="platform" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>Kredi Kartı</option>
+                            <option>Nakit</option>
+                            <option>Papara</option>
+                            <option>Havale/EFT</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="isAbonelik" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" onchange="abonelikKutusunuAc()">
+                            <label for="isAbonelik" class="ml-2 text-sm font-bold text-blue-800 cursor-pointer">Her ay otomatik yenilensin</label>
+                        </div>
+                        <div id="abonelikDetay" class="hidden mt-3 pt-3 border-t border-blue-200">
+                            <label class="block text-xs font-bold text-blue-600 mb-1 uppercase">Her ayın kaçında?</label>
+                            <input type="number" id="odemeGunu" min="1" max="31" class="w-full p-2 bg-white border border-blue-200 rounded-lg text-sm" placeholder="Örn: 1 (Her ayın 1'i)">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="kaydetBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition transform active:scale-95">
+                        Kaydet
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <i class="fas fa-sync-alt text-purple-500"></i> Aktif Abonelikler
+                </h3>
+                <div id="abonelikListesi" class="space-y-3 text-sm">
+                    <p class="text-slate-400 text-center text-xs">Abonelik yok.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:col-span-8 space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 h-64">
+                    <canvas id="kategoriChart"></canvas>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 h-64 flex flex-col justify-center">
+                    <span class="text-xs font-bold text-slate-400 uppercase mb-2">Bütçe Durumu</span>
+                    <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden mb-2">
+                        <div id="butceBar" class="bg-blue-500 h-4 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    <p id="butceText" class="text-center text-sm font-bold text-slate-600">%0 Kullanıldı</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden min-h-[400px]">
+                <div class="p-5 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                    <h2 class="font-bold text-slate-700">Harcama Geçmişi</h2>
+                    <button onclick="verileriYenile()" class="text-xs font-bold text-blue-500 hover:text-blue-700 uppercase flex items-center gap-1">
+                        <i class="fas fa-sync-alt"></i> Yenile
+                    </button>
+                </div>
+                
+                <div id="loader" class="hidden p-12 flex justify-center">
+                    <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10"></div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <tbody id="harcamaListesi" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. VERİ YAPISI (KATEGORİLER VE MARKALAR) ---
+    const DATA = {
+        "Online Alışveriş": ["Trendyol", "Hepsiburada", "Amazon", "N11", "Çiçeksepeti", "Zara", "H&M", "Mavi", "LC Waikiki", "Boyner", "DeFacto", "Bershka", "Stradivarius", "Pull&Bear", "Nike", "Adidas", "Puma"],
+        "Market": ["Migros", "BİM", "A101", "Şok", "CarrefourSA", "File", "Macrocenter", "Getir", "Yemeksepeti Market"],
+        "Yemek & Cafe": ["Starbucks", "Espresso Lab", "Kahve Dünyası", "Burger King", "McDonalds", "KFC", "Dominos", "Köfteci Yusuf", "Yemeksepeti", "GetirYemek"],
+        "Eğlence & Dijital": ["Netflix", "Spotify", "YouTube", "Apple", "Steam", "PlayStation", "Exxen", "Disney+", "BluTV"],
+        "Ulaşım": ["Shell", "Opet", "BP", "Petrol Ofisi", "Uber", "Martı", "BinBin", "Taksi", "İstanbulkart"],
+        "Faturalar": ["Turkcell", "Vodafone", "Türk Telekom", "Enerjisa", "İGDAŞ", "İSKİ", "Kira", "Aidat"]
+    };
+
+    // --- 2. GENİŞLETİLMİŞ LOGO HARİTASI ---
+    const DOMAINS = {
+        // Online Alışveriş
+        "Trendyol": "trendyol.com", "Hepsiburada": "hepsiburada.com", "Amazon": "amazon.com.tr", "N11": "n11.com",
+        "Çiçeksepeti": "ciceksepeti.com", "Zara": "zara.com", "H&M": "hm.com", "Mavi": "mavi.com",
+        "LC Waikiki": "lcwaikiki.com", "Boyner": "boyner.com.tr", "DeFacto": "defacto.com.tr",
+        "Bershka": "bershka.com", "Stradivarius": "stradivarius.com", "Pull&Bear": "pullandbear.com",
+        "Nike": "nike.com", "Adidas": "adidas.com.tr", "Puma": "puma.com",
+        
+        // Market
+        "Migros": "migros.com.tr", "BİM": "bim.com.tr", "A101": "a101.com.tr", "Şok": "sokmarket.com.tr",
+        "CarrefourSA": "carrefoursa.com", "File": "file.com.tr", "Macrocenter": "macrocenter.com.tr",
+        "Getir": "getir.com", "Yemeksepeti Market": "yemeksepeti.com",
+        
+        // Yemek
+        "Starbucks": "starbucks.com.tr", "Burger King": "burgerking.com.tr", "McDonalds": "mcdonalds.com.tr",
+        "KFC": "kfcturkiye.com", "Dominos": "dominos.com.tr", "Köfteci Yusuf": "kofteciyusuf.com",
+        "Yemeksepeti": "yemeksepeti.com", "GetirYemek": "getir.com", "Espresso Lab": "espressolab.com", "Kahve Dünyası": "kahvedunyasi.com",
+        
+        // Dijital
+        "Netflix": "netflix.com", "Spotify": "spotify.com", "YouTube": "youtube.com",
+        "Apple": "apple.com", "Steam": "steampowered.com", "PlayStation": "playstation.com",
+        "Exxen": "exxen.com", "Disney+": "disneyplus.com", "BluTV": "blutv.com",
+        
+        // Ulaşım
+        "Shell": "shell.com.tr", "Opet": "opet.com.tr", "BP": "bp.com.tr", "Petrol Ofisi": "petrolofisi.com.tr",
+        "Uber": "uber.com", "Martı": "marti.tech", "BinBin": "binbin.tech", "İstanbulkart": "belbim.istanbul",
+        
+        // Fatura
+        "Turkcell": "turkcell.com.tr", "Vodafone": "vodafone.com.tr", "Türk Telekom": "turktelekom.com.tr",
+        "Enerjisa": "enerjisa.com.tr", "İGDAŞ": "igdas.istanbul", "İSKİ": "iski.istanbul"
+    };
+
+    let mevcutMaas = 0;
+    let chartKategori = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        kategoriListesiniDoldur();
+        verileriYenile();
+        abonelikleriGetir();
+    });
+
+    // --- FORM MANTIĞI ---
+    function kategoriListesiniDoldur() {
+        const sel = document.getElementById('kategori');
+        Object.keys(DATA).forEach(k => sel.innerHTML += `<option value="${k}">${k}</option>`);
+        sel.innerHTML += `<option value="Diğer">Diğer</option>`;
+    }
+    
+    function altKategorileriGetir() {
+        const k = document.getElementById('kategori').value;
+        const s = document.getElementById('baslikSelect');
+        const inp = document.getElementById('baslikInput');
+        
+        s.innerHTML = '<option value="" disabled selected>Seçiniz...</option>';
+        inp.classList.add('hidden'); // Kategori değişince inputu gizle
+
+        if(DATA[k]) {
+            DATA[k].forEach(m => s.innerHTML += `<option value="${m}">${m}</option>`);
+        }
+        s.innerHTML += `<option value="CUSTOM">✏️ Elle Yaz</option>`;
+    }
+    
+    function manuelGirisKontrol() {
+        const v = document.getElementById('baslikSelect').value;
+        const inp = document.getElementById('baslikInput');
+        v === "CUSTOM" ? inp.classList.remove('hidden') : inp.classList.add('hidden');
+        if (v === "CUSTOM") inp.focus();
+    }
+    
+    function abonelikKutusunuAc() {
+        const chk = document.getElementById('isAbonelik').checked;
+        const div = document.getElementById('abonelikDetay');
+        chk ? div.classList.remove('hidden') : div.classList.add('hidden');
+    }
+
+    // --- VERİ ÇEKME ---
+    async function verileriYenile() {
+        const list = document.getElementById('harcamaListesi');
+        const loader = document.getElementById('loader');
+        list.innerHTML = ''; loader.classList.remove('hidden');
+
+        try {
+            const [resH, resM] = await Promise.all([fetch('/api/harcamalar'), fetch('/api/maas')]);
+            const harcamalar = await resH.json();
+            const maasD = await resM.json();
+            
+            mevcutMaas = maasD.maas || 0;
+            document.getElementById('maasGosterge').innerText = formatTL(mevcutMaas);
+            loader.classList.add('hidden');
+
+            let toplam = 0;
+            harcamalar.forEach(item => {
+                let tutar = parseFloat(item.Tutar) || 0;
+                toplam += tutar;
+                
+                // LOGO YÖNETİMİ
+                let logo = DOMAINS[item.Baslik] 
+                    ? `https://www.google.com/s2/favicons?domain=${DOMAINS[item.Baslik]}&sz=64` 
+                    : null;
+                
+                const imgHTML = logo 
+                    ? `<img src="${logo}" class="w-8 h-8 rounded-full bg-white p-0.5 border border-slate-200 object-contain">` 
+                    : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs text-slate-500">${item.Baslik[0].toUpperCase()}</div>`;
+
+                list.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors">
+                        <td class="p-3 flex items-center gap-3">
+                            ${imgHTML}
+                            <div>
+                                <div class="font-bold text-slate-700">${item.Baslik}</div>
+                                <div class="text-[10px] text-slate-400">${item.Tarih}</div>
+                            </div>
+                        </td>
+                        <td class="p-3 hidden sm:table-cell">
+                            <span class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-bold border border-blue-100">${item.Kategori}</span>
+                        </td>
+                        <td class="p-3 text-right font-bold text-rose-500">-${formatTL(tutar)}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="sil('${item.ID}')" class="text-slate-300 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            guncelleDashboard(toplam, harcamalar);
+
+        } catch (e) { console.error(e); }
+    }
+
+    async function abonelikleriGetir() {
+        const res = await fetch('/api/abonelikler');
+        const data = await res.json();
+        const div = document.getElementById('abonelikListesi');
+        div.innerHTML = '';
+        if(data.length === 0) div.innerHTML = '<p class="text-slate-400 text-center text-xs">Aktif abonelik yok.</p>';
+        
+        data.forEach(sub => {
+            // Logo mantığı abonelikler için de geçerli
+            let logo = DOMAINS[sub.Baslik] 
+                    ? `https://www.google.com/s2/favicons?domain=${DOMAINS[sub.Baslik]}&sz=64` 
+                    : null;
+            const imgHTML = logo 
+                    ? `<img src="${logo}" class="w-6 h-6 rounded-full bg-white border border-slate-200 object-contain">` 
+                    : ``;
+
+            div.innerHTML += `
+                <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <div class="flex items-center gap-2">
+                        ${imgHTML}
+                        <div>
+                            <div class="font-bold text-slate-700 text-sm">${sub.Baslik}</div>
+                            <div class="text-[10px] text-slate-400">Her ayın ${sub.Odeme_Gunu}. günü</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-rose-500 text-sm">-${sub.Tutar}</div>
+                        <button onclick="abonelikSil('${sub.ID}')" class="text-[10px] text-red-400 underline hover:text-red-600">İptal</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // --- DASHBOARD ---
+    function guncelleDashboard(toplam, data) {
+        const kalan = mevcutMaas - toplam;
+        const el = document.getElementById('kalanBakiye');
+        el.innerText = formatTL(kalan);
+        el.className = kalan < 0 ? "text-3xl font-bold text-rose-500" : "text-3xl font-bold text-emerald-500";
+
+        const yuzde = mevcutMaas > 0 ? (toplam / mevcutMaas) * 100 : 0;
+        const bar = document.getElementById('butceBar');
+        bar.style.width = Math.min(yuzde, 100) + "%";
+        
+        if(yuzde < 50) bar.className = "bg-emerald-500 h-4 rounded-full transition-all duration-1000";
+        else if(yuzde < 80) bar.className = "bg-yellow-400 h-4 rounded-full transition-all duration-1000";
+        else bar.className = "bg-rose-500 h-4 rounded-full transition-all duration-1000";
+
+        document.getElementById('butceText').innerText = `%${yuzde.toFixed(1)} Kullanıldı`;
+
+        // Grafik
+        const kats = {};
+        data.forEach(i => kats[i.Kategori] = (kats[i.Kategori] || 0) + parseFloat(i.Tutar));
+        const ctx = document.getElementById('kategoriChart').getContext('2d');
+        if(chartKategori) chartKategori.destroy();
+        chartKategori = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(kats),
+                datasets: [{ 
+                    data: Object.values(kats), 
+                    backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'], 
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 6 } } },
+                cutout: '70%'
+            }
+        });
+    }
+
+    function formatTL(n) { return n.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + ' TL'; }
+
+    // --- AKSİYONLAR ---
+    document.getElementById('ekleForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('kaydetBtn');
+        btn.disabled = true;
+
+        let baslik = document.getElementById('baslikSelect').value;
+        if (baslik === "CUSTOM" || !baslik) baslik = document.getElementById('baslikInput').value;
+        const isAbonelik = document.getElementById('isAbonelik').checked;
+
+        await fetch('/api/ekle', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                baslik, tutar: document.getElementById('tutar').value,
+                kategori: document.getElementById('kategori').value,
+                platform: document.getElementById('platform').value,
+                is_abonelik: isAbonelik,
+                odeme_gunu: document.getElementById('odemeGunu').value
+            })
+        });
+
+        document.getElementById('ekleForm').reset();
+        document.getElementById('baslikSelect').innerHTML = '<option value="" disabled selected>Önce kategori seçin</option>';
+        document.getElementById('baslikInput').classList.add('hidden');
+        btn.disabled = false;
+        
+        setTimeout(() => { verileriYenile(); abonelikleriGetir(); }, 1000);
+    });
+
+    async function sil(id) { if(confirm("Silmek istediğine emin misin?")) { await fetch(`/api/sil/${id}`, {method: 'DELETE'}); verileriYenile(); } }
+    async function abonelikSil(id) { if(confirm("Aboneliği iptal et?")) { await fetch(`/api/abonelik/sil/${id}`, {method: 'DELETE'}); abonelikleriGetir(); } }
+    async function maasGuncelleModal() {
+        const m = prompt("Gelir / Maaş:", mevcutMaas);
+        if(m) { await fetch('/api/maas', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({maas: m})}); verileriYenile(); }
+    }
+</script>
+</body>
+</html>
