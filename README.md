@@ -1,4 +1,4 @@
-# 💰 FinanceAssist Pro - Bulut Tabanlı Finans Yöneticisi
+# 💰 FinanceAssist - Bulut Tabanlı Finans Yöneticisi
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-API-black?style=for-the-badge&logo=flask&logoColor=white)
