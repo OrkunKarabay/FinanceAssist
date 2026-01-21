@@ -1,8 +1,0 @@
-credentials.json
-__pycache__/
-*.pyc
-.DS_Store
-finans.db
-maas.txt
-venv/
-.env
